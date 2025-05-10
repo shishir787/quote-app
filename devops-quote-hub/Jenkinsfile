@@ -26,7 +26,7 @@ pipeline {
       steps {
         withDockerRegistry([ credentialsId: 'dockerhub', url: '' ]) {
           script {
-            dockerImage.push()
+            dockerImage.push() // Push the image to DockerHub
           }
         }
       }
@@ -35,9 +35,14 @@ pipeline {
     stage('Deploy') {
       steps {
         script {
+          // Remove any existing container with the same name (if it exists)
           sh 'docker rm -f quote-app || true'
-          sh 'docker pull ${IMAGE_NAME}'
-          sh 'docker run -d --name quote-app -p 80:3000 ${IMAGE_NAME}'
+
+          // Pull the latest image from DockerHub
+          sh "docker pull ${IMAGE_NAME}"
+
+          // Run the Docker container with the correct ports
+          sh "docker run -d --name quote-app -p 80:3000 ${IMAGE_NAME}"
         }
       }
     }
