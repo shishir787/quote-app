@@ -1,0 +1,45 @@
+pipeline {
+  agent any
+
+  environment {
+    IMAGE_NAME = "shishir78/quote-app:latest"
+  }
+
+  stages {
+    stage('Clone') {
+      steps {
+        checkout scm
+      }
+    }
+
+    stage('Build Docker Image') {
+      steps {
+        dir('devops-quote-hub') {
+          script {
+            dockerImage = docker.build("${IMAGE_NAME}")
+          }
+        }
+      }
+    }
+
+    stage('Push to DockerHub') {
+      steps {
+        withDockerRegistry([ credentialsId: 'dockerhub', url: '' ]) {
+          script {
+            dockerImage.push()
+          }
+        }
+      }
+    }
+
+    stage('Deploy') {
+      steps {
+        script {
+          sh 'docker rm -f quote-app || true'
+          sh 'docker pull ${IMAGE_NAME}'
+          sh 'docker run -d --name quote-app -p 80:3000 ${IMAGE_NAME}'
+        }
+      }
+    }
+  }
+}
